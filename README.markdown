@@ -2,8 +2,8 @@ TextMate Minor Mode
 ===================
 
     ;; This minor mode exists to mimick TextMate's awesome
-    ;; features. 
-    
+    ;; features.
+
     ;;    ⌘T - Go to File
     ;;  ⇧⌘T - Go to Symbol
     ;;    ⌘L - Go to Line
@@ -17,7 +17,7 @@ TextMate Minor Mode
     ;;    ⌥↓ - Column Down
     ;;  ⌘RET - Insert Newline at Line's End
     ;;  ⌥⌘T - Reset File Cache (for Go to File)
-    
+
     ;; A "project" in textmate-mode is determined by the presence of
     ;; a .git directory, an .hg directory, a Rakefile, or a Makefile.
 
@@ -39,6 +39,7 @@ Installation
 
     $ cd ~/.emacs.d/vendor
     $ git clone git://github.com/defunkt/textmate.el.git
+    $ git submodule update
 
 In your emacs config:
 
