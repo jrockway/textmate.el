@@ -69,7 +69,7 @@
 ;;; Needed for projects
 (require 'eproject)
 
-;;; Minor mode
+;;; Configurable variables
 
 (defvar *textmate-gf-exclude*
   "(/|^)(\\.+[^/]+|vendor|fixtures|tmp|log|classes|build)($|/)|(\\.xcodeproj|\\.nib|\\.framework|\\.app|\\.pbproj|\\.pbxproj|\\.xcode|\\.xcodeproj|\\.bundle|\\.pyc)(/|$)"
@@ -170,6 +170,7 @@ completing filenames and symbols (`ido' by default)")
   "Used internally to cache the files in a project.")
 
 (defcustom textmate-word-characters "a-zA-Z0-9_" "Word Characters for Column Movement")
+
 ;;; Bindings
 
 (defun textmate-ido-fix ()
@@ -415,6 +416,8 @@ A place is considered `tab-width' character columns."
   (unless mark-active (progn (push-mark (point))
                              (setq mark-active t transient-mark-mode t)))
   (let (deactivate-mark) (textmate-column-down arg)))
+
+;;; Minor mode
 
 ;;;###autoload
 (define-minor-mode textmate-mode "TextMate Emulation Minor Mode"
