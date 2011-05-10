@@ -71,24 +71,42 @@
 
 ;;; Configurable variables
 
-(defvar *textmate-gf-exclude*
-  "(/|^)(\\.+[^/]+|vendor|fixtures|tmp|log|classes|build)($|/)|(\\.xcodeproj|\\.nib|\\.framework|\\.app|\\.pbproj|\\.pbxproj|\\.xcode|\\.xcodeproj|\\.bundle|\\.pyc)(/|$)"
-  "Regexp of files to exclude from `textmate-goto-file'.")
+(defgroup textmate.el nil
+  "textmate.el; minor mode to make Emacs more like TextMate"
+  :prefix "textmate-"
+  :group 'convenience
+  :link '(url-link :tag "Github repository" "https://github.com/defunkt/textmate.el"))
 
-(defvar *textmate-project-roots*
+(defcustom *textmate-gf-exclude*
+  "(/|^)(\\.+[^/]+|vendor|fixtures|tmp|log|classes|build)($|/)|(\\.xcodeproj|\\.nib|\\.framework|\\.app|\\.pbproj|\\.pbxproj|\\.xcode|\\.xcodeproj|\\.bundle|\\.pyc)(/|$)"
+  "Regexp of files to exclude from `textmate-goto-file'."
+  :group 'textmate.el
+  :type 'regexp)
+
+(defcustom *textmate-project-roots*
   '(".git" ".hg" "Rakefile" "Makefile" "README" "build.xml" ".emacs-project")
-  "The presence of any file/directory in this list indicates a project root.")
+  "The presence of any file/directory in this list indicates a project root."
+  :group 'textmate.el
+  :type '(repeat string))
 
 (define-project-type textmate-project (generic)
   (textmate-search-roots)
   :irrelevant-files (lambda (root) (list *textmate-gf-exclude*)))
 
-(defvar textmate-use-file-cache t
-  "Should `textmate-goto-file' keep a local cache of files?")
+(defcustom textmate-use-file-cache t
+  "Should `textmate-goto-file' keep a local cache of files?"
+  :group 'textmate.el
+  :type 'boolean)
 
-(defvar textmate-completing-library 'ido
+;; TODO: make this an alist type, so the user can specify his own
+;; function
+(defcustom textmate-completing-library 'ido
   "The library `textmade-goto-symbol' and `textmate-goto-file' should use for
-completing filenames and symbols (`ido' by default)")
+completing filenames and symbols (`ido' by default)"
+  :group 'textmate.el
+  :type '(radio (const ido)
+                (const icicles)
+                (const none)))
 
 (defvar *textmate-completing-function-alist* '((ido ido-completing-read)
                                                (icicles  icicle-completing-read)
@@ -169,7 +187,11 @@ completing filenames and symbols (`ido' by default)")
 (defvar *textmate-project-files* '()
   "Used internally to cache the files in a project.")
 
-(defcustom textmate-word-characters "a-zA-Z0-9_" "Word Characters for Column Movement")
+(defcustom textmate-word-characters
+  "a-zA-Z0-9_"
+  "Word Characters for Column Movement"
+  :group 'textmate.el
+  :type 'string)
 
 ;;; Bindings
 
