@@ -30,11 +30,13 @@
 ;;  ⌘RET - Insert Newline at Line's End
 ;;  ⌥⌘T - Reset File Cache (for Go to File)
 
-;; A "project" in textmate-mode is determined by the presence of
-;; a .git directory, an .hg directory, a Rakefile, or a Makefile.
+;; A "project" in textmate-mode is determined by the presence of a
+;; .git directory, an .hg directory, a Rakefile, or a Makefile.  All
+;; eproject features are available in textmate projects.
 
-;; You can configure what makes a project root by appending a file
-;; or directory name onto the `*textmate-project-roots*' list.
+;; You can configure what makes a project root by appending a file or
+;; directory name onto the `*textmate-project-roots*' list or by
+;; defining a new eproject project type.
 
 ;; If no project root indicator is found in your current directory,
 ;; textmate-mode will traverse upwards until one (or none) is found.
@@ -64,6 +66,9 @@
 (eval-when-compile
   (require 'cl))
 
+;;; Needed for projects
+(require 'eproject)
+
 ;;; Minor mode
 
 (defvar *textmate-gf-exclude*
@@ -74,16 +79,16 @@
   '(".git" ".hg" "Rakefile" "Makefile" "README" "build.xml" ".emacs-project")
   "The presence of any file/directory in this list indicates a project root.")
 
+(define-project-type textmate-project (generic)
+  (textmate-search-roots)
+  :irrelevant-files (lambda (root) (list *textmate-gf-exclude*)))
+
 (defvar textmate-use-file-cache t
   "Should `textmate-goto-file' keep a local cache of files?")
 
 (defvar textmate-completing-library 'ido
   "The library `textmade-goto-symbol' and `textmate-goto-file' should use for
 completing filenames and symbols (`ido' by default)")
-
-(defvar textmate-find-files-command "find \"%s\" -type f"
-  "The command `textmate-project-root' uses to find files. %s will be replaced
-the project root.")
 
 (defvar *textmate-completing-function-alist* '((ido ido-completing-read)
                                                (icicles  icicle-completing-read)
@@ -314,29 +319,21 @@ Symbols matching the text at point are put first in the completion list."
   (setq *textmate-project-files* nil)
   (message "textmate-mode cache cleared."))
 
-;;; Utilities
+;;; Project support
 
-(defun textmate-project-files (root)
-  "Finds all files in a given project."
-  (split-string
-    (shell-command-to-string
-     (concat
-      (textmate-string-replace "%s" root textmate-find-files-command)
-      "  | grep -vE '"
-      *textmate-gf-exclude*
-      "' | sed 's:"
-      *textmate-project-root*
-      "/::'")) "\n" t))
+(defun textmate-search-roots ()
+  "eproject selector that searches for projects in the textmate.el way."
+  (ignore-errors ;; bind will fail when there are no roots, but that's ok
+    (destructuring-bind ((best-length . best-root) &rest ignored)
+        (sort (mapcar (lambda (root) (cons (length root) root))
+                      (loop for root in *textmate-project-roots*
+                            collect (look-for root)))
+              (lambda (a b) (> (car a) (car b))))
+      (when (> best-length 0) best-root))))
 
-;; http://snipplr.com/view/18683/stringreplace/
-(defun textmate-string-replace (this withthat in)
-  "replace THIS with WITHTHAT' in the string IN"
-  (with-temp-buffer
-    (insert in)
-    (goto-char (point-min))
-    (while (search-forward this nil t)
-      (replace-match withthat nil t))
-    (buffer-substring (point-min) (point-max))))
+
+(defalias 'textmate-project-files 'eproject-list-project-files-relative)
+(defalias 'textmate-project-root 'eproject-root)
 
 (defun textmate-cached-project-files (&optional root)
   "Finds and caches all files in a given project."
@@ -347,36 +344,7 @@ Symbols matching the text at point are put first in the completion list."
    (t (cdr (setq *textmate-project-files*
                  `(,root . ,(textmate-project-files root)))))))
 
-(defun textmate-project-root ()
-  "Returns the current project root."
-  (when (or
-         (null *textmate-project-root*)
-         (not (string-match *textmate-project-root* default-directory)))
-    (let ((root (textmate-find-project-root)))
-      (if root
-          (setq *textmate-project-root* (expand-file-name (concat root "/")))
-        (setq *textmate-project-root* nil))))
-  *textmate-project-root*)
-
-(defun root-match(root names)
-  (member (car names) (directory-files root)))
-
-(defun root-matches(root names)
-  (if (root-match root names)
-      (root-match root names)
-      (if (eq (length (cdr names)) 0)
-          'nil
-          (root-matches root (cdr names))
-          )))
-
-(defun textmate-find-project-root (&optional root)
-  "Determines the current project root by recursively searching for an indicator."
-  (when (null root) (setq root default-directory))
-  (cond
-   ((root-matches root *textmate-project-roots*)
-    (expand-file-name root))
-   ((equal (expand-file-name root) "/") nil)
-   (t (textmate-find-project-root (concat (file-name-as-directory root) "..")))))
+;;; Utilities
 
 (defun textmate-shift-right (&optional arg)
   "Shift the line or region to the ARG places to the right.
